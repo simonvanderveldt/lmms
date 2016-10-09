@@ -55,6 +55,7 @@ class PianoRoll : public QWidget
 {
 	Q_OBJECT
 	Q_PROPERTY( QColor gridColor READ gridColor WRITE setGridColor )
+	Q_PROPERTY( QColor strongGridColor READ strongGridColor WRITE setStrongGridColor )
 	Q_PROPERTY( QColor noteModeColor READ noteModeColor WRITE setNoteModeColor )
 	Q_PROPERTY( QColor noteColor READ noteColor WRITE setNoteColor )
 	Q_PROPERTY( QColor barColor READ barColor WRITE setBarColor )
@@ -108,10 +109,12 @@ public:
 	Song::PlayModes desiredPlayModeForAccompany() const;
 
 	int quantization() const;
-	
+
 	// qproperty acces functions
 	QColor gridColor() const;
 	void setGridColor( const QColor & c );
+  QColor strongGridColor() const;
+  void setStrongGridColor( const QColor & c );
 	QColor noteModeColor() const;
 	void setNoteModeColor( const QColor & c );
 	QColor noteColor() const;
@@ -374,6 +377,7 @@ private:
 
 	// qproperty fields
 	QColor m_gridColor;
+	QColor m_strongGridColor;
 	QColor m_noteModeColor;
 	QColor m_noteColor;
 	QColor m_barColor;

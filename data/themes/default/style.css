@@ -114,9 +114,10 @@ QMenu::indicator:selected {
 }
 
 PianoRoll {
-	background-color: #040506;
-	qproperty-backgroundShade: rgba(255, 255, 255, 15);
-	qproperty-gridColor: #4f5964;
+	background-color: #343840;
+  qproperty-backgroundShade: rgba(255, 255, 255, 15);
+  qproperty-strongGridColor: #1a2c37;
+  qproperty-gridColor: #2e404b;
 	qproperty-noteModeColor: #0bd556;
 	qproperty-noteColor: #0bd556;
 	qproperty-noteOpacity: 165;

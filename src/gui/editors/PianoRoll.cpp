@@ -189,6 +189,7 @@ PianoRoll::PianoRoll() :
 	m_mouseDownLeft( false ),
 	m_mouseDownRight( false ),
 	m_scrollBack( false ),
+  m_strongGridColor( 0, 0, 0 ),
 	m_gridColor( 0, 0, 0 ),
 	m_noteModeColor( 0, 0, 0 ),
 	m_noteColor( 0, 0, 0 ),
@@ -732,6 +733,12 @@ QColor PianoRoll::gridColor() const
 void PianoRoll::setGridColor( const QColor & c )
 { m_gridColor = c; }
 
+QColor PianoRoll::strongGridColor() const
+{ return m_strongGridColor; }
+
+void PianoRoll::setStrongGridColor( const QColor & c )
+{ m_strongGridColor = c; }
+
 QColor PianoRoll::noteModeColor() const
 { return m_noteModeColor; }
 
@@ -802,7 +809,7 @@ void PianoRoll::setBackgroundShade( const QColor & c )
 
 
 
-void PianoRoll::drawNoteRect( QPainter & p, int x, int y, 
+void PianoRoll::drawNoteRect( QPainter & p, int x, int y,
 				int width, const Note * n, const QColor & noteCol,
 				const QColor & selCol, const int noteOpc, const bool borders )
 {
@@ -1915,7 +1922,7 @@ void PianoRoll::mouseReleaseEvent( QMouseEvent * me )
 		{
 			// select the notes within the selection rectangle and
 			// then destroy the selection rectangle
-			computeSelectedNotes( 
+			computeSelectedNotes(
 					me->modifiers() & Qt::ShiftModifier );
 		}
 		else if( m_action == ActionMoveNote )
@@ -2460,7 +2467,7 @@ void PianoRoll::dragNotes( int x, int y, bool alt, bool shift, bool ctrl )
 				}
 			}
 		}
-	} 
+	}
 	else if (m_action == ActionResizeNote)
 	{
 		// When resizing notes:
@@ -2468,7 +2475,7 @@ void PianoRoll::dragNotes( int x, int y, bool alt, bool shift, bool ctrl )
 		// If shift is pressed we resize and rearrange only the selected notes
 		// If shift + ctrl then we also rearrange all posterior notes (sticky)
 		// If shift is pressed but only one note is selected, apply sticky
-			
+
 		if (shift)
 		{
 			// Algorithm:
@@ -2488,8 +2495,8 @@ void PianoRoll::dragNotes( int x, int y, bool alt, bool shift, bool ctrl )
 			const Note *posteriorNote = nullptr;
 			for (const Note *note : notes)
 			{
-				if (note->selected() && (posteriorNote == nullptr || 
-					note->oldPos().getTicks() + note->oldLength().getTicks() > 
+				if (note->selected() && (posteriorNote == nullptr ||
+					note->oldPos().getTicks() + note->oldLength().getTicks() >
 					posteriorNote->oldPos().getTicks() + posteriorNote->oldLength().getTicks()))
 				{
 					posteriorNote = note;
@@ -2509,9 +2516,9 @@ void PianoRoll::dragNotes( int x, int y, bool alt, bool shift, bool ctrl )
 				if(note->selected())
 				{
 					// scale relative start and end positions by scaleFactor
-					int newStart = stretchStartTick + scaleFactor * 
+					int newStart = stretchStartTick + scaleFactor *
 						(note->oldPos().getTicks() - stretchStartTick);
-					int newEnd = stretchStartTick + scaleFactor * 
+					int newEnd = stretchStartTick + scaleFactor *
 						(note->oldPos().getTicks()+note->oldLength().getTicks() - stretchStartTick);
 					// if  not holding alt, quantize the offsets
 					if(!alt)
@@ -2530,7 +2537,7 @@ void PianoRoll::dragNotes( int x, int y, bool alt, bool shift, bool ctrl )
 					int newLength = qMax(1, newEnd-newStart);
 					if (note == posteriorNote)
 					{
-						posteriorDeltaThisFrame = (newStart+newLength) - 
+						posteriorDeltaThisFrame = (newStart+newLength) -
 							(note->pos().getTicks() + note->length().getTicks());
 					}
 					note->setLength( MidiTime(newLength) );
@@ -2578,15 +2585,16 @@ void PianoRoll::paintEvent(QPaintEvent * pe )
 {
 	bool drawNoteNames = ConfigManager::inst()->value( "ui", "printnotelabels").toInt();
 
-	QColor horizCol = QColor( gridColor() );
-	QColor vertCol = QColor( gridColor() );
-
 	QStyleOption opt;
 	opt.initFrom( this );
 	QPainter p( this );
 	style()->drawPrimitive( QStyle::PE_Widget, &opt, &p, this );
 
 	QBrush bgColor = p.background();
+  QColor gridBarCol = bgColor.color().darker(180);
+  QColor midCol = bgColor.color().darker(140);
+  QColor vertCol = bgColor.color().darker(115);
+  QColor horizCol = bgColor.color().darker(115);
 
 	// fill with bg color
 	p.fillRect( 0, 0, width(), height(), bgColor );
@@ -2697,14 +2705,14 @@ void PianoRoll::paintEvent(QPaintEvent * pe )
 		}
 
 		// Draw the C line in a more prominent color
-		if( static_cast<Keys>( key % KeysPerOctave ) == Key_C )
-		{
-			horizCol.setAlpha( 192 );
-		}
-		else
-		{
-			horizCol.setAlpha( 64 );
-		}
+		// if( static_cast<Keys>( key % KeysPerOctave ) == Key_C )
+		// {
+		// 	horizCol.setAlpha( 192 );
+		// }
+		// else
+		// {
+		// 	horizCol.setAlpha( 64 );
+		// }
 
 		// draw key-line
 		p.setPen( horizCol );
@@ -2872,17 +2880,17 @@ void PianoRoll::paintEvent(QPaintEvent * pe )
 
 	// alternating shades for better contrast
 	// count the bars which disappear on left by scrolling
-	int barCount = m_currentPosition / MidiTime::ticksPerTact();
-	int leftBars = m_currentPosition / m_ppt;
-
-	for ( int x = WHITE_KEY_WIDTH; x < width() + m_currentPosition; x += m_ppt, ++barCount )
-	{
-		if ( (barCount + leftBars)  % 2 != 0 )
-		{
-				p.fillRect( x - m_currentPosition, PR_TOP_MARGIN, m_ppt,
-					height() - ( PR_BOTTOM_MARGIN + PR_TOP_MARGIN ), backgroundShade() );
-		}
-	}
+	// int barCount = m_currentPosition / MidiTime::ticksPerTact();
+	// int leftBars = m_currentPosition / m_ppt;
+  //
+	// for ( int x = WHITE_KEY_WIDTH; x < width() + m_currentPosition; x += m_ppt, ++barCount )
+	// {
+	// 	if ( (barCount + leftBars)  % 2 != 0 )
+	// 	{
+	// 			p.fillRect( x - m_currentPosition, PR_TOP_MARGIN, m_ppt,
+	// 				height() - ( PR_BOTTOM_MARGIN + PR_TOP_MARGIN ), backgroundShade() );
+	// 	}
+	// }
 
 	// we need float here as odd time signatures might produce rounding
 	// errors else and thus an unusable grid
@@ -2894,23 +2902,46 @@ void PianoRoll::paintEvent(QPaintEvent * pe )
 			// every tact-start needs to be a bright line
 			if( tact_16th % spt == 0 )
 			{
-	 			p.setPen( gridColor() );
+	 			p.setPen( gridBarCol );
 			}
 			// normal line
 			else if( tact_16th % 4 == 0 )
 			{
-				vertCol.setAlpha( 160 );
-				p.setPen( vertCol );
+				p.setPen( midCol );
 			}
 			// weak line
 			else
 			{
-				vertCol.setAlpha( 128 );
 				p.setPen( vertCol );
 			}
 
 			p.drawLine( (int) x, PR_TOP_MARGIN, (int) x, height() -
 							PR_BOTTOM_MARGIN );
+
+
+      // Add accent lines around the bar line
+      // QColor strongAccentCol = QColor(53,70,82);
+      QColor gridBarAccentCol = gridBarCol;
+      gridBarAccentCol.setAlpha( 40 );
+      if( tact_16th % spt == 0 )
+			{
+        p.setPen( gridBarAccentCol );
+        p.drawLine( (int) x - 1, PR_TOP_MARGIN, (int) x - 1, height() -
+                PR_BOTTOM_MARGIN );
+        p.drawLine( (int) x + 1, PR_TOP_MARGIN, (int) x + 1, height() -
+                PR_BOTTOM_MARGIN );
+			}
+
+      // QColor gridNormalAccentCol = midCol;
+      // gridNormalAccentCol.setAlpha( 60 );
+      // if( tact_16th % 4 == 0 )
+      // {
+      //   p.setPen( gridNormalAccentCol );
+      //   p.drawLine( (int) x - 1, PR_TOP_MARGIN, (int) x - 1, height() -
+      //           PR_BOTTOM_MARGIN );
+      //   p.drawLine( (int) x + 1, PR_TOP_MARGIN, (int) x + 1, height() -
+      //           PR_BOTTOM_MARGIN );
+      // }
 
 			// extra 32nd's line
 			if( show32nds )
@@ -2998,7 +3029,7 @@ void PianoRoll::paintEvent(QPaintEvent * pe )
 			int editHandleTop = 0;
 			if( m_noteEditMode == NoteEditVolume )
 			{
-				QColor color = barColor().lighter( 30 + ( note->getVolume() * 90 / MaxVolume ) );
+				QColor color = noteColor().lighter( 30 + ( note->getVolume() * 90 / MaxVolume ) );
 				if( note->selected() )
 				{
 					color = selectedNoteColor();
